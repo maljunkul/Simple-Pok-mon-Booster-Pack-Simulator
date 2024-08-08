@@ -60,6 +60,7 @@ def get_booster_pack_cost(pack_id):
     conn = sqlite3.connect('pokemon_booster.db')
     c =conn.cursor()
     c.execute('SELECT cost FROM booster_packs WHERE id = ?', (pack_id))
+    cost =c.fetchone()[0]
     conn.close()
     return cost
 
