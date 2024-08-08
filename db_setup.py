@@ -4,6 +4,17 @@ def initialize_db():
     conn = sqlite3.connect('pokemon_booster.db')
     c = conn.cursor()
 
+
+def add_money_column():
+    conn = sqlite3.connect('pokemon_booster.db')
+    c = conn.cursor()
+    # Add money column if it doesn't exist
+    c.execute('''
+    ALTER TABLE users ADD COLUMN money INTEGER DEFAULT 0
+    ''')
+    conn.commit()
+    conn.close()
+
     # Create tables
     c.execute('''
     CREATE TABLE IF NOT EXISTS users (
@@ -45,3 +56,4 @@ def initialize_db():
 
 if __name__ == '__main__':
     initialize_db()
+    add_money_column()
