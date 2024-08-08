@@ -8,7 +8,8 @@ def initialize_db():
     c.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL
+        username TEXT UNIQUE NOT NULL,
+        money INTEGER DEFAULT 0
     )
     ''')
 
@@ -28,6 +29,14 @@ def initialize_db():
         FOREIGN KEY(user_id) REFERENCES users(id),
         FOREIGN KEY(card_id) REFERENCES cards(id),
         PRIMARY KEY(user_id, card_id)
+    )
+    ''')
+
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS booster_packs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        cost INTEGER NOT NULL
     )
     ''')
 
