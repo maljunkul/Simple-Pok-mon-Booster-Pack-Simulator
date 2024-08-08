@@ -61,4 +61,17 @@ def buy_booster_pack(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
     
-@app.route
+@app.route('/user_collection/<int:user_id>', methods=['GET'])
+def user_collection(user_id):
+    try:
+        cards = get_user_cards(user_id)
+        return render_template('collection.html', cards=cards)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+    
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
