@@ -33,6 +33,19 @@ def get_user_cards(user_id):
     conn.close()
     return cards
 
+def get_user_money(user.id):
+    conn = sqlite3.connect('pokemon_booster.db')
+    c = conn.cursor()
+    c.execute('SELECT money FROM users WHERE id = ?', (user_id,))
+    money = c.fetchone()[0]
+    conn.close()
+    return money
+
+def update_user_money(user_id, amount):
+    conn = sqlite3.connect('pokemon_booster.db')
+    c = conn.cursor()
+    c.execute('UPDATE users SET money = money + ? WHERE id = ?', (amount, user_id))
+
 
 # Routes
 @app.route('/buy_booster_pack/<int:user_id>', methods=['POST'])
