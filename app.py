@@ -3,14 +3,14 @@ import sqlite3
 import requests
 import random
 
-app = Flash(__name__)
+app = Flask(__name__)
 
 # Constants
 POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon'
 TCGAPI_URL = 'https://api.pokemontcg.io/v2/cards'
 
 # Helper functions
-def fetch_card_from_tcg_api():
+def fetch_cards_from_tcg_api():
     response = requests.get(TCGAPI_URL)
     if response.status_code == 200:
         return response.json()['data']
