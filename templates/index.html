@@ -7,11 +7,15 @@
 </head>
 <body>
     <h1>Welcome to Pokemon Booster Pack!</h1>
-    <form action="/buy_booster_pack/1" method="post" id="buy-form">
+    <form action="/buy_booster_pack/1" method="post">
         <button type="submit">Buy Booster Pack</button>
     </form>
-    <form action="/sell_card/1" method="post" id="sell-form">
-        <input type="text" name="card_id" placeholder="Card ID to Sell">
+    <form action="/sell_card/1" method="post">
+        <select name = "card_id">
+            {% for card in user_cards %}
+            <option value="{{ card[0] }}">{{ card[1] }}</option>
+            {% endfor %}
+        </select>
         <button type="submit">Sell Card</button>
     </form>
     <a href="/user_collection/1">View My Collection</a>

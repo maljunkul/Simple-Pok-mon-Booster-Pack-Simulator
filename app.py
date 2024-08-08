@@ -130,22 +130,25 @@ def buy_booster_pack(user_id):
 @app.route('/sell_card/<int:user_id>', methods=['POST'])
 def sell_card(user_id):
     try:
-        card_id =  request.json.get('card_id')
+        card_id = request.form.get('card_id')  # Use request.form for form data
+        if not card_id:
+            return jsonify({"status": "error", "message": "Card ID is required."})
+
         card_value = get_card_value({'id': card_id})
-
+        
         update_user_money(user_id, card_value)
-
+        
         conn = sqlite3.connect('pokemon_booster.db')
         c = conn.cursor()
-        c.execute('''DELETE FROM user_cards WHERE user_id = ? AND card_id = ?
-        ''', (user_id,card_id))
+        c.execute('''
+        DELETE FROM user_cards WHERE user_id = ? AND card_id = ?
+        ''', (user_id, card_id))
         conn.commit()
         conn.close()
-
-        return jsonify({"status": "success", "message":  f"Card sold for {card_value} money"})
+        
+        return jsonify({"status": "success", "message": f"Card sold for {card_value} money."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
-
 @app.route('/user_collection/<int:user_id>', methods=['GET'])
 def user_collection(user_id):
     try:
