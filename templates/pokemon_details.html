@@ -40,6 +40,14 @@
             background-color: #007BFF; /* Changes background on hover */
             color: #fff; /* Changes text color on hover */
         }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            font-size: 0.9em;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -49,5 +57,6 @@
     <p>Weight: {{ pokemon['weight'] }} kilograms</p>
     <p>Type: {{ pokemon['types'][0]['type']['name'] }}</p>
     <a href="/">Back to Home</a>
+    <footer>This page uses the PokéAPI.</footer>
 </body>
 </html>
