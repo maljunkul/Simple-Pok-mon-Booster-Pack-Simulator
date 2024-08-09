@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, render_template, request
 import sqlite3
 import requests
 import random
@@ -6,19 +6,87 @@ import random
 app = Flask(__name__)
 
 # Constants
-POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon'
+POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon/'
 TCGAPI_URL = 'https://api.pokemontcg.io/v2/cards'
+API_KEY = 'fd387a74-c7a7-42ac-be47-713540f4b69b'  # Your API Key
 
 # Helper functions
-def fetch_cards_from_tcg_api():
-    response = requests.get(TCGAPI_URL)
-    if response.status_code == 200:
-        return response.json()['data']
-    else:
+def fetch_cards_from_tcg_api(set_name):
+    headers = {
+        'X-Api-Key': API_KEY
+    }
+    try:
+        response = requests.get(TCGAPI_URL, params={'q': f'set.name:"{set_name}"'}, headers=headers)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        data = response.json()
+        if 'data' in data:
+            return data['data']
+        else:
+            raise Exception(f"Unexpected API response structure: {data}")
+    except requests.exceptions.RequestException as e:
+        # Log the exception and return an error message
+        print(f"Error fetching data from TCG API: {e}")
         raise Exception("Failed to fetch data from Pokemon TCG API")
 
-def get_random_cards(cards, num = 5):
+def get_random_cards(cards, num=5):
     return random.sample(cards, num)
+
+def initialize_db():
+    conn = sqlite3.connect('pokemon_booster.db')
+    c = conn.cursor()
+    c.execute('DROP TABLE IF EXISTS user_cards')
+    c.execute('DROP TABLE IF EXISTS cards')
+    c.execute('DROP TABLE IF EXISTS booster_packs')
+
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS cards (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        image_url TEXT,
+        rarity TEXT
+    )
+    ''')
+
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS user_cards (
+        user_id INTEGER,
+        card_id TEXT,
+        FOREIGN KEY(card_id) REFERENCES cards(id)
+    )
+    ''')
+
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS booster_packs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL
+    )
+    ''')
+
+    c.executemany('INSERT INTO booster_packs (name) VALUES (?)',
+                  [('Crown Zenith',), ('Lost Origin',), ('151',)])
+    conn.commit()
+    conn.close()
+
+def save_card_to_db(card):
+    conn = sqlite3.connect('pokemon_booster.db')
+    c = conn.cursor()
+    c.execute('''
+    INSERT OR IGNORE INTO cards (id, name, image_url, rarity)
+    VALUES (?, ?, ?, ?)
+    ''', (card['id'], card['name'], card['images']['small'], card.get('rarity', 'Unknown')))
+    conn.commit()
+    conn.close()
+
+def save_user_cards(user_id, cards):
+    conn = sqlite3.connect('pokemon_booster.db')
+    c = conn.cursor()
+    for card in cards:
+        c.execute('''
+        INSERT INTO user_cards (user_id, card_id)
+        VALUES (?, ?)
+        ''', (user_id, card['id']))
+    conn.commit()
+    conn.close()
 
 def get_user_cards(user_id):
     conn = sqlite3.connect('pokemon_booster.db')
@@ -33,133 +101,68 @@ def get_user_cards(user_id):
     conn.close()
     return cards
 
-def get_user_money(user_id):
-    conn = sqlite3.connect('pokemon_booster.db')
-    c = conn.cursor()
-    c.execute('SELECT money FROM users WHERE id = ?', (user_id,))
-    money = c.fetchone()[0]
-    conn.close()
-    return money
+def fetch_pokemon_details(name):
+    response = requests.get(POKEAPI_URL + name.lower())
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
 
-def update_user_money(user_id, amount):
+def get_booster_packs():
     conn = sqlite3.connect('pokemon_booster.db')
     c = conn.cursor()
-    c.execute('UPDATE users SET money = money + ? WHERE id = ?', (amount, user_id))
-    conn.commit()
-    conn.close()
-
-def choose_booster_pack():
-    conn = sqlite3.connect('pokemon_booster.db')
-    c = conn.cursor()
-    c.execute('SELECT id, name, cost FROM booster_packs')
+    c.execute('SELECT id, name FROM booster_packs')
     packs = c.fetchall()
     conn.close()
     return packs
 
-def get_booster_pack_cost(pack_id):
-    conn = sqlite3.connect('pokemon_booster.db')
-    c =conn.cursor()
-    c.execute('SELECT cost FROM booster_packs WHERE id = ?', (pack_id))
-    cost =c.fetchone()[0]
-    conn.close()
-    return cost
-
-def generate_card_from_booster_pack(pack):
-    cards_data = fetch_cards_from_tcg_api()
-    booster_pack = get_random_cards(cards_data, 5)
-    return random.choice(booster_pack)
-
-def get_card_value(card):
-    # Implement a method to calculate card value (could be based on rarity or other factors)
-    rarity_values = {'rare': 10, 'uncommon': 5, 'common': 1}
-    return rarity_values.get(card.get('rarity', 'common'), 1)
-
-def is_best_or_expensive_card(card):
-    # Implement logic to determine if the card is particularly valuable or rare
-    return card.get('rarity') in ['rare', 'ultra-rare']
 # Routes
-@app.route('/buy_booster_pack/<int:user_id>', methods=['POST'])
-def buy_booster_pack(user_id):
-    try:
-        user_money = get_user_money(user_id)
-        booster_packs = choose_booster_pack()
-
-        if not booster_packs:
-            return jsonify ({"status": "error", "message": "No booster packs available"})
-        
-        pack_id = random.choice([pack[0] for pack in booster_packs])
-        pack_cost = get_booster_pack_cost(pack_id)
-
-        if user_money >= pack_cost:
-            update_user_money(user_id, -pack_cost)
-            new_card = generate_card_from_booster_pack(pack_id)
-
-            card_id = new_card['id']
-            card_name = new_card['name']
-            card_image_url = new_card['images']['small']
-            card_rarity = new_card.get('rarity', 'Unknown')
-
-            conn = sqlite3.connect('pokemon_booster.db')
-            c = conn.cursor()
-
-            c.execute('''
-            INSERT OR IGNORE INTO cards (id, name, image_url, rarity)
-            VALUES (?, ?, ?, ?)
-            ''', (card_id, card_name, card_image_url, card_rarity))
-            
-            c.execute('''
-            INSERT OR IGNORE INTO user_cards (user_id, card_id)
-            VALUES (?, ?)
-            ''', (user_id, card_id))
-            
-            conn.commit()
-            conn.close()
-            
-            if is_best_or_expensive_card(new_card):
-                message = "Congratulations! You got a valuable card!"
-            
-            else:
-                message = "You got a card.Try again for a better one!"
-
-            return jsonify({"status": "success",  "message":message, "card": new_card})
-        else:
-            return jsonify({"status": "error","message": "Not enough money to buy a booster pack."})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-
-@app.route('/sell_card/<int:user_id>', methods=['POST'])
-def sell_card(user_id):
-    try:
-        card_id = request.form.get('card_id')  # Use request.form for form data
-        if not card_id:
-            return jsonify({"status": "error", "message": "Card ID is required."})
-
-        card_value = get_card_value({'id': card_id})
-        
-        update_user_money(user_id, card_value)
-        
-        conn = sqlite3.connect('pokemon_booster.db')
-        c = conn.cursor()
-        c.execute('''
-        DELETE FROM user_cards WHERE user_id = ? AND card_id = ?
-        ''', (user_id, card_id))
-        conn.commit()
-        conn.close()
-        
-        return jsonify({"status": "success", "message": f"Card sold for {card_value} money."})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-@app.route('/user_collection/<int:user_id>', methods=['GET'])
-def user_collection(user_id):
-    try:
-        cards = get_user_cards(user_id)
-        return render_template('collection.html', cards=cards)
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-    
 @app.route('/')
 def index():
-    return render_template('index.html')
+    booster_packs = get_booster_packs()
+    return render_template('index.html', booster_packs=booster_packs)
+
+@app.route('/choose_pack/<int:pack_id>', methods=['POST'])
+def choose_pack(pack_id):
+    packs = {1: 'Crown Zenith', 2: 'Lost Origin', 3: '151'}
+    set_name = packs.get(pack_id)
+    if not set_name:
+        return jsonify({"status": "error", "message": "Invalid pack ID"})
+
+    try:
+        cards_data = fetch_cards_from_tcg_api(set_name)
+        selected_cards = get_random_cards(cards_data)
+
+        # Save cards to the database
+        for card in selected_cards:
+            save_card_to_db(card)
+
+        # Save user's selected cards
+        save_user_cards(1, selected_cards)  # Assuming a single user with id=1
+
+        return render_template('cards.html', cards=selected_cards)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
+@app.route('/pokemon/<string:card_name>', methods=['GET'])
+def pokemon_details(card_name):
+    details = fetch_pokemon_details(card_name)
+    if details:
+        return render_template('pokemon_details.html', pokemon=details)
+    else:
+        return jsonify({"status": "error", "message": "Pokemon not found"})
+    
+@app.route('/pokemon/<string:card_name>', methods=['GET'])
+def pokemon_details(card_name):
+    details = fetch_pokemon_details(card_name)
+    
+    if details:
+        return render_template('pokemon_details.html', pokemon=details)
+    else:
+        # If the card is not a Pokémon, skip the API call and show a message.
+        return render_template('non_pokemon.html', card_name=card_name)
+
 
 if __name__ == '__main__':
+    initialize_db()
     app.run(debug=True)

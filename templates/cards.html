@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Pokemon Cards</title>
+</head>
+<body>
+    <h1>Your Cards</h1>
+    <ul>
+        {% for card in cards %}
+        <li>
+            <img src="{{ card['images']['small'] }}" alt="{{ card['name'] }}">
+            <p>{{ card['name'] }} ({{ card['rarity'] }})</p>
+            <a href="/pokemon/{{ card['name'] }}">Learn more about {{ card['name'] }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back to Home</a>
+</body>
+</html>
