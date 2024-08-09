@@ -4,17 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokemon Booster Pack</title>
+    <style>
+        .booster-container {
+            display: flex;
+            justify-content: space-around; /* Adjust alignment if needed */
+            flex-wrap: wrap; /* Allows wrapping to the next line if needed */
+            gap: 20px; /* Space between items */
+            padding: 20px; /* Add some padding around the container */
+        }
+        .booster-pack {
+            text-align: center;
+        }
+        .booster-pack img {
+            width: 150px; /* Adjust size as needed */
+            height: auto;
+        }
+        .booster-pack button {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Choose Your Booster Pack</h1>
-    <form method="POST" action="/choose_pack/1">
-        <button type="submit">Crown Zenith</button>
-    </form>
-    <form method="POST" action="/choose_pack/2">
-        <button type="submit">Lost Origin</button>
-    </form>
-    <form method="POST" action="/choose_pack/3">
-        <button type="submit">151</button>
-    </form>
+    <div class="booster-container">
+        <div class="booster-pack">
+            <img src="{{ url_for('static', filename='images/crown_zenith.png') }}" alt="Crown Zenith">
+            <form method="POST" action="/choose_pack/1">
+                <button type="submit">Crown Zenith</button>
+            </form>
+        </div>
+        <div class="booster-pack">
+            <img src="{{ url_for('static', filename='images/lost_origin.png') }}" alt="Lost Origin">
+            <form method="POST" action="/choose_pack/2">
+                <button type="submit">Lost Origin</button>
+            </form>
+        </div>
+        <div class="booster-pack">
+            <img src="{{ url_for('static', filename='images/151.png') }}" alt="151">
+            <form method="POST" action="/choose_pack/3">
+                <button type="submit">151</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
