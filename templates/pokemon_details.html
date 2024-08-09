@@ -4,12 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ pokemon['name'] }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* Sets a clean font for the page */
+            text-align: center; /* Centers text and images */
+            padding: 20px; /* Adds padding around the content */
+            background-color: #f4f4f4; /* Light background color for contrast */
+        }
+        h1 {
+            color: #333; /* Dark color for the heading */
+        }
+        img {
+            width: 150px; /* Sets a fixed width for the Pokémon image */
+            height: auto; /* Keeps the image aspect ratio */
+            border-radius: 10px; /* Rounds the corners of the image */
+            border: 1px solid #ddd; /* Adds a light border around the image */
+            margin-bottom: 20px; /* Adds space below the image */
+        }
+        p {
+            font-size: 18px; /* Sets a readable font size for the text */
+            color: #666; /* Gray color for the text */
+            margin: 10px 0; /* Adds space above and below each paragraph */
+        }
+        a {
+            display: inline-block; /* Makes the link block-level to apply padding */
+            padding: 10px 20px; /* Adds padding inside the link */
+            font-size: 18px; /* Font size for the link */
+            color: #007BFF; /* Blue color for the link */
+            text-decoration: none; /* Removes underline from the link */
+            border: 1px solid #007BFF; /* Adds a border around the link */
+            border-radius: 5px; /* Rounds the corners of the link */
+            background-color: #fff; /* White background color for the link */
+        }
+        a:hover {
+            background-color: #007BFF; /* Changes background on hover */
+            color: #fff; /* Changes text color on hover */
+        }
+    </style>
 </head>
 <body>
     <h1>{{ pokemon['name'] }}</h1>
     <img src="{{ pokemon['sprites']['front_default'] }}" alt="{{ pokemon['name'] }}">
-    <p>Height: {{ pokemon['height'] }}</p>
-    <p>Weight: {{ pokemon['weight'] }}</p>
+    <p>Height: {{ pokemon['height'] }} meters</p>
+    <p>Weight: {{ pokemon['weight'] }} kilograms</p>
     <p>Type: {{ pokemon['types'][0]['type']['name'] }}</p>
     <a href="/">Back to Home</a>
 </body>
